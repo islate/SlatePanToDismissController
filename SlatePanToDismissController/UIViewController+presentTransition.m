@@ -10,21 +10,6 @@
 
 #import <objc/runtime.h>
 
-#define IsIOS7AND8 ([[UIDevice currentDevice].systemVersion intValue] >= 7.0 && [[UIDevice currentDevice].systemVersion intValue] < 9.0)
-#define IsIOS8 ([[UIDevice currentDevice].systemVersion intValue] >= 8.0 && [[UIDevice currentDevice].systemVersion intValue] < 9.0)
-
-#ifndef DLog
-#  ifdef DEBUG
-#    define DLog(...) NSLog(__VA_ARGS__)
-#  else
-#    define DLog(...) /* */
-#  endif
-#endif
-
-#ifndef ALog
-#  define ALog(...) NSLog(__VA_ARGS__)
-#endif
-
 static char UIViewControllerDismissWithPanGestureRecognizer;
 static char UIViewControllerDismissWithPanGestureRecognizerDelegate;
 static char UIViewControllerLeftShadow;
@@ -138,27 +123,37 @@ const CGFloat kDuration = 0.3f;
 
 #pragma mark - present or dismiss with custom flip transition
 
-- (void)presentFrom:(UIViewController *)viewController animated:(BOOL)animated
+- (void)presentFrom:(UIViewController * _Nonnull)viewController animated:(BOOL)animated
 {
-    if (IsIOS8)
+    [self presentFrom:viewController animated:animated completion:nil];
+}
+
+- (void)presentFrom:(UIViewController * _Nonnull)viewController animated:(BOOL)animated completion: (void (^ __nullable)(void))completion
+{
+    if ([[UIDevice currentDevice].systemVersion intValue] >= 8.0)
     {
         self.modalPresentationStyle = UIModalPresentationCustom;
-        TransitoningDelegate *delegate = [[TransitoningDelegate alloc] init];
+        __block TransitoningDelegate *delegate = [[TransitoningDelegate alloc] init];
         self.transitioningDelegate = delegate;
-        [viewController presentViewController:self animated:animated completion:nil];
+        [viewController presentViewController:self animated:animated completion:^{
+            if (completion)
+            {
+                completion();
+            }
+            delegate = nil;
+        }];
     }
     else
     {
         UIModalPresentationStyle oldStyle = viewController.modalPresentationStyle;
         viewController.modalPresentationStyle = UIModalPresentationCurrentContext;
-        [self presentActionWithViewController:viewController animated:animated];
+        [self presentActionWithViewController:viewController animated:animated completion:completion];
         viewController.modalPresentationStyle = oldStyle;
     }
 }
 
-- (void)presentActionWithViewController:(UIViewController *)viewController animated:(BOOL)animated
+- (void)presentActionWithViewController:(UIViewController *)viewController animated:(BOOL)animated completion: (void (^ __nullable)(void))completion
 {
-    
     __weak __typeof(self) weakSelf = self;
     __weak __typeof(viewController) weakPresentingViewController = viewController;
     
@@ -198,6 +193,10 @@ const CGFloat kDuration = 0.3f;
                                  }
                                  completion:^(BOOL finished) {
                                      weakPresentingViewController.view.transform = CGAffineTransformIdentity;
+                                     
+                                     if (completion) {
+                                         completion();
+                                     }
                                  }
                  ];
             }
@@ -206,21 +205,27 @@ const CGFloat kDuration = 0.3f;
         
     }
     @catch (NSException *exception) {
-        ALog(@"%@", exception);
+        NSLog(@"%@", exception);
     }
 }
 
 - (void)dismissAnimated:(BOOL)animated
 {
+    [self dismissAnimated:animated completion:nil];
+}
+
+- (void)dismissAnimated:(BOOL)animated completion: (void (^ __nullable)(void))completion
+{
     if (self.presentingViewController)
     {
-        if (IsIOS8)
+        if ([[UIDevice currentDevice].systemVersion intValue] >= 8.0)
         {
             self.transitioningDelegate = nil;
         }
         
-        if (!animated) {
-            [self dismissViewControllerAnimated:NO completion:nil];
+        if (!animated)
+        {
+            [self dismissViewControllerAnimated:NO completion:completion];
             return;
         }
         
@@ -235,16 +240,13 @@ const CGFloat kDuration = 0.3f;
                              weakPresentingViewController.view.transform = CGAffineTransformIdentity;
                          }
                          completion:^(BOOL finished) {
-                             [weakSelf dismissViewControllerAnimated:NO completion:nil];
+                             [weakSelf dismissViewControllerAnimated:NO completion:completion];
                          }
          ];
         
         if (self.dismissWithStatusBarChange)
         {
-            if (IsIOS7AND8)
-            {
-                [[UIApplication sharedApplication] setStatusBarStyle:self.afterDismissStatusBarStyle animated:NO];
-            }
+            [[UIApplication sharedApplication] setStatusBarStyle:self.afterDismissStatusBarStyle animated:NO];
         }
     }
 }
@@ -287,13 +289,10 @@ const CGFloat kDuration = 0.3f;
     {
         if (self.dismissWithStatusBarChange)
         {
-            if (IsIOS7AND8)
+            CGFloat x = [recognizer translationInView:self.view].x;
+            if (x > 0)
             {
-                CGFloat x = [recognizer translationInView:self.view].x;
-                if (x > 0)
-                {
-                    [[UIApplication sharedApplication] setStatusBarStyle:self.afterDismissStatusBarStyle animated:NO];
-                }
+                [[UIApplication sharedApplication] setStatusBarStyle:self.afterDismissStatusBarStyle animated:NO];
             }
         }
     }
@@ -346,10 +345,7 @@ const CGFloat kDuration = 0.3f;
             
             if (self.dismissWithStatusBarChange)
             {
-                if (IsIOS7AND8)
-                {
-                    [[UIApplication sharedApplication] setStatusBarStyle:self.beforeDismissStatusBarStyle animated:NO];
-                }
+                [[UIApplication sharedApplication] setStatusBarStyle:self.beforeDismissStatusBarStyle animated:NO];
             }
         }
     }

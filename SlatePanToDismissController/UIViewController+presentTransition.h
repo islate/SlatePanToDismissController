@@ -16,8 +16,8 @@
  */
 @interface UIViewController (presentTransition)
 
-@property (nonatomic, strong, readonly) UIPanGestureRecognizer *dismissWithPanGestureRecognizer;
-@property (nonatomic, strong, readonly) id<UIGestureRecognizerDelegate> dismissWithPanGestureRecognizerDelegate;
+@property (nullable, nonatomic, strong, readonly) UIPanGestureRecognizer *dismissWithPanGestureRecognizer;
+@property (nullable, nonatomic, strong, readonly) id<UIGestureRecognizerDelegate> dismissWithPanGestureRecognizerDelegate;
 
 /**
  *  dismissWithStatusBarChange=YES  dismiss过程中，改变statusbar的样式
@@ -36,7 +36,7 @@
  *  @param viewController 在这个controller之上弹出
  *  @param animated       是否有向左滑动进入效果
  */
-- (void)presentFrom:(UIViewController *)viewController animated:(BOOL)animated;
+- (void)presentFrom:(UIViewController * _Nonnull)viewController animated:(BOOL)animated;
 
 /**
  *  dismiss方法
@@ -44,5 +44,23 @@
  *  @param animated 是否有向右滑动退出效果
  */
 - (void)dismissAnimated:(BOOL)animated;
+
+
+/**
+ *  present方法
+ *
+ *  @param viewController 在这个controller之上弹出
+ *  @param animated       是否有向左滑动进入效果
+ *  @param completion 完毕后执行block
+ */
+- (void)presentFrom:(UIViewController * _Nonnull)viewController animated:(BOOL)animated completion: (void (^ __nullable)(void))completion;
+
+/**
+ *  dismiss方法
+ *
+ *  @param animated 是否有向右滑动退出效果
+ *  @param completion 完毕后执行block
+ */
+- (void)dismissAnimated:(BOOL)animated completion: (void (^ __nullable)(void))completion;
 
 @end
