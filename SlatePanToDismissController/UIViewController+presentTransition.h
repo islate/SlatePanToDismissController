@@ -3,7 +3,7 @@
 //  Slate
 //
 //  Created by yizelin on 13-11-22.
-//  Copyright (c) 2013年 Modern Mobile Digital Media Company Limited. All rights reserved.
+//  Copyright (c) 2013年 islate. All rights reserved.
 //
 
 #import <UIKit/UIKit.h>
